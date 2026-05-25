@@ -106,51 +106,6 @@ def _ollama_answer(prompt: str) -> str | None:
     except Exception:
         return None
 
-
-def _direct_answer(query: str) -> str | None:
-    q = query.lower()
-    if "macbeth" in q and "duncan" in q:
-        return (
-            "Macbeth kills Duncan because the witches' prophecies awaken his ambition, "
-            "Duncan's choice of Malcolm as heir blocks Macbeth's path to the crown, "
-            "and Lady Macbeth pushes him to turn desire into action. The evidence also "
-            "shows Macbeth's guilt immediately after the murder, so the act is not shown "
-            "as simple bravery but as a morally destructive choice."
-        )
-    if "who" in q and "hamlet" in q:
-        return (
-            "Hamlet is the Prince of Denmark and the central character of the revenge plot. "
-            "He is grieving his father's death, troubled by his mother Gertrude's quick "
-            "marriage to Claudius, and later drawn into revenge when the ghost suggests "
-            "Claudius murdered the old king."
-        )
-    if "montague" in q and "capulet" in q:
-        return (
-            "The Montagues and Capulets are two noble families in Verona locked in an old "
-            "feud. The conflict matters because Romeo is a Montague and Juliet is a Capulet, "
-            "so their love grows inside a public family hatred that makes ordinary choices dangerous."
-        )
-    if "hamlet" in q and "delay" in q and "revenge" in q:
-        return (
-            "Hamlet delays revenge because he is uncertain, morally troubled, and wants proof "
-            "before killing Claudius. His grief and habit of reflection slow him down, while "
-            "the ghost's accusation creates pressure to act."
-        )
-    if "lady macbeth" in q:
-        return (
-            "Lady Macbeth is Macbeth's wife and a major force behind Duncan's murder. "
-            "She urges Macbeth to hide his intentions, challenges his courage, and helps plan "
-            "the killing, but later the guilt of the crime overwhelms her."
-        )
-    if "juliet" in q and "conflict" in q:
-        return (
-            "Juliet is conflicted because she loves Romeo after learning he belongs to the "
-            "Montague family, the enemy of her Capulet household. Her private feeling clashes "
-            "with the public feud that controls her family world."
-        )
-    return None
-
-
 def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
     slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
     if slm_answer:
@@ -169,9 +124,8 @@ def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
         return "The retrieved evidence is too limited for a confident answer."
 
     evidence_lines = _best_evidence_lines(query, retrieved)
-    direct = _direct_answer(query)
     answer = [
-        direct or " ".join(dict.fromkeys(summaries[:3])),
+        " ".join(dict.fromkeys(summaries[:3])),
         "",
         "Scene in focus: " + " ".join(dict.fromkeys(summaries[:3])),
     ]
