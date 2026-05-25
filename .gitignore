@@ -10,7 +10,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-.sqlite3
-.bin
+*.sqlite3
+*.bin
 instructor_questions.json
-.csv
+*.csv
