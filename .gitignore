@@ -10,3 +10,5 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+.sqlite3
+.bin
