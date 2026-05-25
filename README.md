@@ -15,6 +15,7 @@ data/
   raw/                         Provided structured Shakespeare dataset
 prompts/
   system_prompt.txt            RAG behaviour instructions
+  stylised_prompt.txt          Creative style-generation instructions
 results/
   instructor_questions.json    Evaluation questions
   chroma_db/                   Persistent ChromaDB vector store
@@ -105,6 +106,8 @@ For each question, the chatbot prints:
 - a preview of the RAG prompt used to condition generation.
 
 Stylised-response detection uses semantic similarity between the user prompt and style-intent phrases, rather than direct keyword matching. The same embedding model is also used to select the closest stylised topic from the prompt and retrieved evidence.
+
+Stylised generation uses `prompts/stylised_prompt.txt`, which keeps creative responses under 150 words and marks them as creative output rather than factual evidence.
 
 ## Language Model Interface
 

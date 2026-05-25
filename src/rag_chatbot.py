@@ -5,7 +5,7 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Sequence, Tuple
 
-from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR
+from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR, SEMANTIC_SIMILARITY_THRESHOLD
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
 from retrieval import EmbeddingRetriever
@@ -40,10 +40,11 @@ def load_system_prompt() -> str:
     prompt_path = PROMPT_DIR / "system_prompt.txt"
     return prompt_path.read_text(encoding="utf-8")
 
+def load_stylised_prompt() -> str:
+    prompt_path = PROMPT_DIR / "stylised_prompt.txt"
+    return prompt_path.read_text(encoding="utf-8")
 
-def build_rag_prompt(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
-    system_prompt = load_system_prompt()
-
+def parse_context(retrieved):
     context_blocks = []
     for rank, (chunk, score) in enumerate(retrieved, start=1):
         context_blocks.append(
@@ -51,12 +52,34 @@ def build_rag_prompt(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
             f"{format_chunk_for_display(chunk)}"
         )
 
-    context = "\n\n".join(context_blocks)
+    return "\n\n".join(context_blocks)
 
-    prompt = f"""{system_prompt}
+def build_stylised_prompt(query, retrieved):
+    prompt = load_stylised_prompt()
+
+    prompt = f"""{prompt}
+
+
+    User request:
+    {query}
+
+    Retrieved context for inspiration only:
+    {parse_context(retrieved)}
+
+    Response:
+    """
+
+    return prompt
+
+
+def build_rag_prompt(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
+    prompt = load_system_prompt()
+
+
+    prompt = f"""{prompt}
 
     Retrieved context:
-    {context}
+    {parse_context(retrieved)}
 
     User question:
     {query}
@@ -147,17 +170,27 @@ def _ollama_answer(prompt: str) -> str | None:
 
 
 def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]], embedding_model: Any | None = None) -> str:
-    answer = []
     if embedding_model is None:
         from sentence_transformers import SentenceTransformer
         embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
     if _is_style_request(query, embedding_model):
-        return _stylised_answer(query, retrieved, embedding_model)
+        return generate_stylised_answer(query, retrieved)
     else:
-        slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
-        if slm_answer:
-            answer.append(slm_answer)
+        return generate_evidence_answer(query, retrieved)
+
+def generate_stylised_answer(query, retrieved):
+    slm_answer = _ollama_answer(build_stylised_prompt(query, retrieved))
+    if slm_answer:
+        return slm_answer
+
+
+def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
+    answer = []
+
+    slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
+    if slm_answer:
+        answer.append(slm_answer)
 
 
     summaries = []
