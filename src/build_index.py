@@ -1,4 +1,4 @@
-from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH
+from config import CHROMA_DIR, DEFAULT_TOP_K_RETRIEVES, EMBEDDING_MODEL_NAME, INDEX_PATH
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
 from retrieval import EmbeddingRetriever
@@ -16,7 +16,7 @@ def main() -> None:
     retriever.save(INDEX_PATH)
 
     query = "Why does Macbeth kill Duncan?"
-    results = retriever.retrieve(query, top_k=DEFAULT_TOP_K)
+    results = retriever.retrieve(query, top_k=DEFAULT_TOP_K_RETRIEVES)
 
     print(f"Retriever backend: {retriever.backend}")
     print(f"Saved Chroma index marker to: {INDEX_PATH}")

@@ -5,7 +5,7 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Sequence, Tuple
 
-from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR, SEMANTIC_SIMILARITY_THRESHOLD
+from config import CHROMA_DIR, DEFAULT_TOP_K_RETRIEVES, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR, SEMANTIC_SIMILARITY_THRESHOLD
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
 from retrieval import EmbeddingRetriever, build_retriever
@@ -210,11 +210,11 @@ def main() -> None:
     print("Type 'quit' to exit.\n")
 
     while True:
-        query = input("Question: ").strip()
+        query = input("Query: ").strip()
         if query.lower() in {"quit", "exit"}:
             break
 
-        retrieved = retriever.retrieve(query, top_k=DEFAULT_TOP_K)
+        retrieved = retriever.retrieve(query, top_k=DEFAULT_TOP_K_RETRIEVES)
         answer = generate_answer(query, retrieved, retriever.model)
 
         print("\n")

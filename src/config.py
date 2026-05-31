@@ -16,7 +16,7 @@ PLAY_FILES = {
     "romeo_and_juliet": RAW_DATA_DIR / "romeo_and_juliet.json",
 }
 
-DEFAULT_TOP_K = 1
+DEFAULT_TOP_K_RETRIEVES = 3
 CHUNK_WORDS = 260
 CHUNK_OVERLAP = 45
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
