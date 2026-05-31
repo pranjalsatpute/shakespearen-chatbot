@@ -16,7 +16,7 @@ def main() -> None:
         retrieved = retriever.retrieve(query, top_k=1)[0][0].get("scene_summary")
 
         print("\n")
-        print("Top Matching Scene:\n")
+        print("Top Matching Scene Summary:\n")
         print(retrieved)
         print("\n")
 
