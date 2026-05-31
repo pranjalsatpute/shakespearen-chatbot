@@ -94,18 +94,29 @@ def _sentences(text: str) -> List[str]:
     return re.split(r"(?<=[.!?])\s+", cleaned)
 
 
-def _best_evidence_lines(query: str, retrieved: List[Tuple[Chunk, float]], limit: int = 3) -> List[str]:
-    q_terms = {w.lower() for w in re.findall(r"[A-Za-z']+", query) if len(w) > 3}
+def _best_evidence_lines(query: str, retrieved: List[Tuple[Chunk, float]], model: Any, limit: int = 3) -> List[str]:
     candidates = []
     for chunk, _ in retrieved:
         for sent in _sentences(chunk["text"]):
-            if len(sent) < 60 or re.fullmatch(r"[\[A-Z .:;'-]+", sent):
+            sent = sent.strip()
+            if len(sent) < 60 or sent.isupper():
                 continue
-            terms = {w.lower() for w in re.findall(r"[A-Za-z']+", sent)}
-            candidates.append((len(q_terms & terms), sent, chunk))
-    candidates.sort(key=lambda x: x[0], reverse=True)
+            candidates.append((sent, chunk))
+
+    if candidates:
+        texts = [query, *[sent for sent, _ in candidates]]
+        embeddings = model.encode(texts, normalize_embeddings=True)
+        query_embedding = embeddings[0]
+        scored = [
+            (_cosine(query_embedding, sentence_embedding), sent, chunk)
+            for sentence_embedding, (sent, chunk) in zip(embeddings[1:], candidates)
+        ]
+        scored.sort(key=lambda x: x[0], reverse=True)
+    else:
+        scored = []
+
     lines = []
-    for _, sent, chunk in candidates[:limit]:
+    for _, sent, chunk in scored[:limit]:
         lines.append(f"{chunk['play']} {chunk.get('act')}.{chunk.get('scene')}: {sent[:260]}")
     if not lines:
         for chunk, _ in retrieved[:limit]:
@@ -155,7 +166,7 @@ def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]], embedding_
     if _is_style_request(query, embedding_model):
         return generate_stylised_answer(query, retrieved)
     else:
-        return generate_evidence_answer(query, retrieved)
+        return generate_evidence_answer(query, retrieved, embedding_model)
 
 def generate_stylised_answer(query, retrieved):
     slm_answer = _ollama_answer(build_stylised_prompt(query, retrieved))
@@ -163,7 +174,7 @@ def generate_stylised_answer(query, retrieved):
         return slm_answer
 
 
-def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
+def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]], embedding_model: Any) -> str:
     answer = []
 
     slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
@@ -180,7 +191,7 @@ def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -
     if not summaries:
         return "The retrieved evidence is too limited for a confident answer."
 
-    evidence_lines = _best_evidence_lines(query, retrieved)
+    evidence_lines = _best_evidence_lines(query, retrieved, embedding_model)
     answer += [
         " ".join(dict.fromkeys(summaries[:3])),
         "",
